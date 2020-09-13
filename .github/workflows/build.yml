@@ -15,7 +15,7 @@ jobs:
         python-version: 3.7
     - name: Update Version
       id: semver
-      uses: RightBrain-Networks/semver-action@1.0.0
+      uses: RightBrain-Networks/semver-action@master
       with:
         mode: get
     - name: Install dependencies
