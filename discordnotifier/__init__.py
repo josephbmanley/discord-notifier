@@ -6,6 +6,8 @@ version = "0.0.0"
 config = configparser.ConfigParser()
 config_path = "discord_config.ini"
 
+currently_enabled = True
+
 if not os.path.exists(config_path):
     with open(config_path, "w") as file_writer:
         file_writer.write("""[discord]
@@ -39,15 +41,35 @@ class Notifier(discord.Client):
             print(f"I see {message.author}")
             await message.channel.send(":eye: You have been seen! :eye:")
 
-        if str(message.author) in [str(self.user), "The Genuine Wonder#2859"]:
-            return
-        
-        # Format and print mesage
-        formatted_message = f"<{message.author}> \"{message.content}\" from #{message.channel} on {message.guild}"
-        print(formatted_message)
+        if str(message.author) == config["discord"]["ignore_user"]:
+            if str(message.channel) == "Direct Message":
+                if message.content.lower() == "start":
+                    currently_enabled = True
+                    message.channel.send("Notifications were enabled")
+                    print("Notifications were enabled")
+                elif message.content.lower() == "stop":
+                    currently_enabled = False
+                    print("Notifications were disabled")
+                    message.channel.send("Notifications were disabled")
+                elif message.content.lower() == "status":
+                    if currently_enabled:
+                        message.channel.send("Notifications are currently enabled!")
+                    else:
+                        message.channel.send("Notifications are currently disabled!")
+                else:
+                    print("Valid commands are 'START', 'STATUS', and 'STOP'")
 
-        # Send notification to SNS
-        sns.publish(Message=formatted_message)
+
+        if str(message.author) in [str(self.user), config["discord"]["ignore_user"]]:
+            return
+
+        if currently_enabled:
+            # Format and print mesage
+            formatted_message = f"<{message.author}> \"{message.content}\" from #{message.channel} on {message.guild}"
+            print(formatted_message)
+
+            # Send notification to SNS
+            sns.publish(Message=formatted_message)
 
 
 def main():
