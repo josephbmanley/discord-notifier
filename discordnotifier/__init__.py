@@ -6,8 +6,6 @@ version = "0.0.2"
 config = configparser.ConfigParser()
 config_path = "discord_config.ini"
 
-currently_enabled = True
-
 if not os.path.exists(config_path):
     with open(config_path, "w") as file_writer:
         file_writer.write("""[discord]
@@ -28,6 +26,9 @@ if sns == None:
     sys.exit(0)
 
 class Notifier(discord.Client):
+    def __init__(self):
+        super().__init__()
+        self.enabled = True
     async def on_ready(self):
         print(f"Logged in as {self.user}")
 
@@ -42,28 +43,29 @@ class Notifier(discord.Client):
             await message.channel.send(":eye: You have been seen! :eye:")
 
         if str(message.author) == config["discord"]["ignore_user"]:
-            if str(message.channel) == "Direct Message":
+            if str(message.channel).lower() == f"direct message with {config['discord']['ignore_user']}".lower():
                 if message.content.lower() == "start":
-                    currently_enabled = True
-                    message.channel.send("Notifications were enabled")
+                    self.enabled = True
                     print("Notifications were enabled")
+                    await message.channel.send("Notifications were enabled")
                 elif message.content.lower() == "stop":
-                    currently_enabled = False
+                    self.enabled = False
                     print("Notifications were disabled")
-                    message.channel.send("Notifications were disabled")
+                    await message.channel.send("Notifications were disabled")
                 elif message.content.lower() == "status":
-                    if currently_enabled:
-                        message.channel.send("Notifications are currently enabled!")
+                    if self.enabled:
+                        await message.channel.send("Notifications are currently enabled!")
                     else:
-                        message.channel.send("Notifications are currently disabled!")
+                        await message.channel.send("Notifications are currently disabled!")
                 else:
-                    print("Valid commands are 'START', 'STATUS', and 'STOP'")
+                    await message.channel.send("Valid commands are 'START', 'STATUS', and 'STOP'")
+                return
 
 
         if str(message.author) in [str(self.user), config["discord"]["ignore_user"]]:
             return
 
-        if currently_enabled:
+        if self.enabled:
             # Format and print mesage
             formatted_message = f"<{message.author}> \"{message.content}\" from #{message.channel} on {message.guild}"
             print(formatted_message)
